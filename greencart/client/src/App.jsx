@@ -18,6 +18,7 @@ import AddProduct from './pages/seller/AddProduct';
 import ProductList from './pages/seller/ProductList';
 import Orders from './pages/seller/Orders';
 import Loading from './components/Loading';
+import Contact from './pages/contact';
 
 const App = () => {
 
@@ -47,6 +48,7 @@ const App = () => {
             <Route path='product-list' element={<ProductList/>} />
             <Route path='orders' element={<Orders/>} />
           </Route>
+          <Route path='/contact' element={<Contact/>} />
         </Routes>
       </div>
      {!isSellerPath && <Footer/>}

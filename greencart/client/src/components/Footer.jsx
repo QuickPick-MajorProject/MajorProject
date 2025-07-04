@@ -8,7 +8,7 @@ const Footer = () => {
                 <div>
                     <img className="w-34 md:w-32" src={assets.logo} alt="logo" />
                     <p className="max-w-[410px] mt-6">
-                        We deliver fresh groceries and snacks straight to your door. Trusted by thousands, we aim to make your shopping experience simple and affordable.</p>
+                        Freshness You Can Trust, Savings You will Love! Trusted by thousands, we aim to make your shopping experience simple and affordable.</p>
                 </div>
                 <div className="flex flex-wrap justify-between w-full md:w-[45%] gap-5">
                     {footerLinks.map((section, index) => (
@@ -26,7 +26,8 @@ const Footer = () => {
                 </div>
             </div>
             <p className="py-4 text-center text-sm md:text-base text-gray-500/80">
-                Copyright {new Date().getFullYear()} © GreatStack.dev All Right Reserved.
+                Copyright {new Date().getFullYear()} © QuickPick All Right Reserved.<br/>
+                Project from G. Nishritha   T. Sai Dhruva   T. Venu Gopal
             </p>
         </div>
     );

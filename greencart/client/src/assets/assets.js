@@ -69,6 +69,11 @@ import vanilla_muffins_image from "./vanilla_muffins_image.png";
 import quinoa_image from "./quinoa_image.png";
 import brown_rice_image from "./brown_rice_image.png";
 import barley_image from "./barley_image.png";
+import call_icon from "./call_icon.png";
+import mail_icon from "./mail_icon.png";
+import insta_icon from "./insta_icon.png";
+import x_icon from "./x_icon.png";
+import location_icon from "./location_icon.png";
 
 export const assets = {
   logo,
@@ -98,6 +103,11 @@ export const assets = {
   bottom_banner_image_sm,
   add_address_iamge,
   box_icon,
+  call_icon,
+  mail_icon,
+  insta_icon,
+  x_icon,
+  location_icon
 };
 
 export const categories = [
@@ -150,29 +160,19 @@ export const footerLinks = [
     title: "Quick Links",
     links: [
       { text: "Home", url: "#" },
-      { text: "Best Sellers", url: "#" },
-      { text: "Offers & Deals", url: "#" },
-      { text: "Contact Us", url: "#" },
-      { text: "FAQs", url: "#" },
-    ],
-  },
-  {
-    title: "Need help?",
-    links: [
-      { text: "Delivery Information", url: "#" },
-      { text: "Return & Refund Policy", url: "#" },
-      { text: "Payment Methods", url: "#" },
-      { text: "Track your Order", url: "#" },
-      { text: "Contact Us", url: "#" },
+      { text: "All products", url: "/products" },
+      { text: "Contact Us", url: "contact" },
+      { text: "Cart", url: "/cart" },
+      { text: "Orders", url: "/my-orders" }
     ],
   },
   {
     title: "Follow Us",
     links: [
-      { text: "Instagram", url: "#" },
-      { text: "Twitter", url: "#" },
-      { text: "Facebook", url: "#" },
-      { text: "YouTube", url: "#" },
+      { text: "Instagram", url: "https://www.instagram.com/" },
+      { text: "X", url: "https://www.x.com/" },
+      { text: "Facebook", url: "https://www.facebook.com/" },
+      { text: "YouTube", url: "https://www.youtube.com/" },
     ],
   },
 ];
