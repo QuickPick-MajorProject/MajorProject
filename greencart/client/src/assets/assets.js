@@ -31,7 +31,6 @@ import bottles_image from "./bottles_image.png";
 import maggi_image from "./maggi_image.png";
 import dairy_product_image from "./dairy_product_image.png";
 import bakery_image from "./bakery_image.png";
-import grain_image from "./grain_image.png";
 import potato_image_1 from "./potato_image_1.png";
 import potato_image_2 from "./potato_image_2.png";
 import potato_image_3 from "./potato_image_3.png";
@@ -74,6 +73,18 @@ import mail_icon from "./mail_icon.png";
 import insta_icon from "./insta_icon.png";
 import x_icon from "./x_icon.png";
 import location_icon from "./location_icon.png";
+import snacks_icon from "./snacks_icon.png";
+import groceries_image from "./groceries_image.png";
+import meat_image from "./meat_image.png";
+import personal_image from "./personal_image.jpeg";
+import baby_image from "./baby_image.png";
+import household_image from "./household_image.png";
+import stationary_image from "./stationary_image.png";
+import sauces_image from "./sauces_image.png";
+import spices_image from "./spices_image.png";
+import frozen_image from "./frozen_image.png";
+
+//import { text } from "express";
 
 export const assets = {
   logo,
@@ -107,7 +118,17 @@ export const assets = {
   mail_icon,
   insta_icon,
   x_icon,
-  location_icon
+  location_icon,
+  snacks_icon,
+  groceries_image,
+  meat_image,
+  personal_image,
+  baby_image,
+  household_image,
+  stationary_image,
+  sauces_image,
+  spices_image,
+  frozen_image
 };
 
 export const categories = [
@@ -124,7 +145,13 @@ export const categories = [
     bgColor: "#FEE0E0",
   },
   {
-    text: "Cold Drinks",
+    text: "Groceries",
+    path: "Groceries",
+    image: groceries_image,
+    bgColor: "#F1E3F9",
+  },
+  {
+    text: "Beverages",
     path: "Drinks",
     image: bottles_image,
     bgColor: "#F0F5DE",
@@ -148,11 +175,59 @@ export const categories = [
     bgColor: "#E0F6FE",
   },
   {
-    text: "Grains & Cereals",
-    path: "Grains",
-    image: grain_image,
-    bgColor: "#F1E3F9",
+    text: "Snacks",
+    path: "Snacks",
+    image: snacks_icon,
+    bgColor: "#c5c1f7",
   },
+  {
+    text: "Meat",
+    path: "Meat",
+    image: meat_image,
+    bgColor: "#F2F2F2",
+  },
+  {
+    text: "Personal Care",
+    path: "PersonalCare",
+    image: personal_image,
+    bgColor: "#F7F7F7",
+  },
+  {
+    text: "Baby Care",
+    path: "BabyCare",
+    image: baby_image,
+    bgColor: "#F7F7F7",
+  },
+  {
+    text: "Household and Cleaning",
+    path: "Household",
+    image: household_image,
+    bgColor: "#F7F7F7",
+  },
+  {
+    text: "Stationary",
+    path: "Stationary",
+    image: stationary_image,
+    bgColor: "#F7F7F7",
+  },
+  {
+    text: "Sauces and Spreads",
+    path: "Sauces",
+    image: sauces_image,
+    bgColor: "#F7F7F7",
+  },
+  {
+    text: "Spices",
+    path: "Spices",
+    image: spices_image,
+    bgColor: "#F7F7F7",
+  },
+  {
+    text: "Frozen Foods",
+    path: "Frozen",
+    image: frozen_image,
+    bgColor: "#F7F7F7",
+  }
 ];
 
 export const footerLinks = [
