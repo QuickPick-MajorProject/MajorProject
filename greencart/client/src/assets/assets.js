@@ -1,4 +1,4 @@
-import logo from "./logo.svg";
+import logo from "./logo.png";
 import search_icon from "./search_icon.svg";
 import remove_icon from "./remove_icon.svg";
 import arrow_right_icon_colored from "./arrow_right_icon_colored.svg";
@@ -13,7 +13,7 @@ import order_icon from "./order_icon.svg";
 import upload_area from "./upload_area.png";
 import profile_icon from "./profile_icon.png";
 import menu_icon from "./menu_icon.svg";
-import delivery_truck_icon from "./delivery_truck_icon.svg";
+import ai_icon from "./ai_icon.png";
 import leaf_icon from "./leaf_icon.svg";
 import coin_icon from "./coin_icon.svg";
 import box_icon from "./box_icon.svg";
@@ -86,7 +86,7 @@ export const assets = {
   upload_area,
   profile_icon,
   menu_icon,
-  delivery_truck_icon,
+  ai_icon,
   leaf_icon,
   coin_icon,
   trust_icon,
@@ -179,9 +179,9 @@ export const footerLinks = [
 
 export const features = [
   {
-    icon: delivery_truck_icon,
-    title: "Fastest Delivery",
-    description: "Groceries delivered in under 30 minutes.",
+    icon: ai_icon,
+    title: "AI-Powered Grocery Assistance",
+    description: "Quickly generate grocery lists by simply typing your meal plans.",
   },
   {
     icon: leaf_icon,
