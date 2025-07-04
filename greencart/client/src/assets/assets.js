@@ -76,7 +76,7 @@ import location_icon from "./location_icon.png";
 import snacks_icon from "./snacks_icon.png";
 import groceries_image from "./groceries_image.png";
 import meat_image from "./meat_image.png";
-import personal_image from "./personal_image.jpeg";
+import personal_image from "./personal_image.png";
 import baby_image from "./baby_image.png";
 import household_image from "./household_image.png";
 import stationary_image from "./stationary_image.png";
@@ -136,97 +136,97 @@ export const categories = [
     text: "Organic veggies",
     path: "Vegetables",
     image: organic_vegitable_image,
-    bgColor: "#FEF6DA",
+    bgColor: "#FEF6DA", // light yellow
   },
   {
     text: "Fresh Fruits",
     path: "Fruits",
     image: fresh_fruits_image,
-    bgColor: "##c5c1f7",
+    bgColor: "#E6F7F1", // light mint
   },
   {
     text: "Groceries",
     path: "Groceries",
     image: groceries_image,
-    bgColor: "#F1E3F9",
+    bgColor: "#F1E3F9", // light lavender
   },
   {
     text: "Beverages",
     path: "Drinks",
     image: bottles_image,
-    bgColor: "#F0F5DE",
+    bgColor: "#F0F5DE", // light greenish yellow
   },
   {
     text: "Instant Food",
     path: "Instant",
     image: maggi_image,
-    bgColor: "#E1F5EC",
+    bgColor: "#FFF3E6", // light peach
   },
   {
     text: "Dairy Products",
     path: "Dairy",
     image: dairy_product_image,
-    bgColor: "#FEE6CD",
+    bgColor: "#FEE6CD", // light orange
   },
   {
     text: "Bakery & Breads",
     path: "Bakery",
     image: bakery_image,
-    bgColor: "#E0F6FE",
+    bgColor: "#E0F6FE", // light blue
   },
   {
     text: "Snacks",
     path: "Snacks",
     image: snacks_icon,
-    bgColor: "#c5c1f7",
+    bgColor: "#E6E6FA", // light purple
   },
   {
     text: "Meat",
     path: "Meat",
     image: meat_image,
-    bgColor: "#F2F2F2",
+    bgColor: "#F2F2F2", // light gray
   },
   {
     text: "Personal Care",
     path: "PersonalCare",
     image: personal_image,
-    bgColor: "#F7F7F7",
+    bgColor: "#FFF7E6", // light cream
   },
   {
     text: "Baby Care",
     path: "BabyCare",
     image: baby_image,
-    bgColor: "#F7F7F7",
+    bgColor: "#E6F0FF", // light baby blue
   },
   {
-    text: "Household and Cleaning",
+    text: "Household Cleaning",
     path: "Household",
     image: household_image,
-    bgColor: "#F7F7F7",
+    bgColor: "#F7F7F7", // very light gray
   },
   {
     text: "Stationary",
     path: "Stationary",
     image: stationary_image,
-    bgColor: "#F7F7F7",
+    bgColor: "#F6E6FF", // light lilac
   },
   {
     text: "Sauces and Spreads",
     path: "Sauces",
     image: sauces_image,
-    bgColor: "#F7F7F7",
+    bgColor: "#FFF0F5", // light pink
   },
   {
     text: "Spices",
     path: "Spices",
     image: spices_image,
-    bgColor: "#F7F7F7",
+    bgColor: "#FFF9E6", // light yellowish
   },
   {
     text: "Frozen Foods",
     path: "Frozen",
     image: frozen_image,
-    bgColor: "#F7F7F7",
+    bgColor: "#E6F7FF", // light icy blue
   }
 ];
 
