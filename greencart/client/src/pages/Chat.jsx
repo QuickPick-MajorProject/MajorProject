@@ -21,14 +21,15 @@ const Chat = () => {
         userId: user._id,
         message: input
       });
-      if (res.data && res.data.reply) {
+      if (res.data && res.data.aiResult) {
         setMessages((prev) => [
           ...prev,
           {
             sender: 'ai',
-            text: res.data.reply // Use backend's full reply message
+            text: res.data.reply
           }
         ]);
+        // Update cart in context immediately after successful response
         if (res.data.cartItems) {
           setCartItems(res.data.cartItems);
         }

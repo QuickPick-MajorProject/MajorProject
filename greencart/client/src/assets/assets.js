@@ -136,97 +136,97 @@ export const categories = [
     text: "Organic veggies",
     path: "Vegetables",
     image: organic_vegitable_image,
-    bgColor: "#FEF6DA", // light yellow
+    bgColor: "#FEF6DA",
   },
   {
     text: "Fresh Fruits",
     path: "Fruits",
     image: fresh_fruits_image,
-    bgColor: "#E6F7F1", // light mint
+    bgColor: "##c5c1f7",
   },
   {
     text: "Groceries",
     path: "Groceries",
     image: groceries_image,
-    bgColor: "#F1E3F9", // light lavender
+    bgColor: "#F1E3F9",
   },
   {
     text: "Beverages",
     path: "Drinks",
     image: bottles_image,
-    bgColor: "#F0F5DE", // light greenish yellow
+    bgColor: "#F0F5DE",
   },
   {
     text: "Instant Food",
     path: "Instant",
     image: maggi_image,
-    bgColor: "#FFF3E6", // light peach
+    bgColor: "#E1F5EC",
   },
   {
     text: "Dairy Products",
     path: "Dairy",
     image: dairy_product_image,
-    bgColor: "#FEE6CD", // light orange
+    bgColor: "#FEE6CD",
   },
   {
     text: "Bakery & Breads",
     path: "Bakery",
     image: bakery_image,
-    bgColor: "#E0F6FE", // light blue
+    bgColor: "#E0F6FE",
   },
   {
     text: "Snacks",
     path: "Snacks",
     image: snacks_icon,
-    bgColor: "#E6E6FA", // light purple
+    bgColor: "#c5c1f7",
   },
   {
     text: "Meat",
     path: "Meat",
     image: meat_image,
-    bgColor: "#F2F2F2", // light gray
+    bgColor: "#F2F2F2",
   },
   {
     text: "Personal Care",
     path: "PersonalCare",
     image: personal_image,
-    bgColor: "#FFF7E6", // light cream
+    bgColor: "#F7F7F7",
   },
   {
     text: "Baby Care",
     path: "BabyCare",
     image: baby_image,
-    bgColor: "#E6F0FF", // light baby blue
+    bgColor: "#F7F7F7",
   },
   {
     text: "Household Cleaning",
     path: "Household",
     image: household_image,
-    bgColor: "#F7F7F7", // very light gray
+    bgColor: "#F7F7F7",
   },
   {
     text: "Stationary",
     path: "Stationary",
     image: stationary_image,
-    bgColor: "#F6E6FF", // light lilac
+    bgColor: "#F7F7F7",
   },
   {
     text: "Sauces and Spreads",
     path: "Sauces",
     image: sauces_image,
-    bgColor: "#FFF0F5", // light pink
+    bgColor: "#F7F7F7",
   },
   {
     text: "Spices",
     path: "Spices",
     image: spices_image,
-    bgColor: "#FFF9E6", // light yellowish
+    bgColor: "#F7F7F7",
   },
   {
     text: "Frozen Foods",
     path: "Frozen",
     image: frozen_image,
-    bgColor: "#E6F7FF", // light icy blue
+    bgColor: "#F7F7F7",
   }
 ];
 

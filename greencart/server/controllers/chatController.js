@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import axios from "axios";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
@@ -42,7 +41,7 @@ export const processChatAndAddToCart = async (req, res) => {
     const servings = extractServings(message);
 
     // Build strict prompt for Gemini
-    const prompt = `You are an intelligent grocery shopping assistant for an online store.\n\nYour job is to process any user request related to groceries, recipes, or adding specific products to the cart.\n\nInstructions:\n- Carefully read and understand the user's message. Only add products that are clearly required or explicitly requested by the user.\n- The user may request a recipe, a list, or a specific product/quantity (e.g., 'add 1 bag of basmati rice').\n- Do NOT add unrelated, extra, or generic products.\n- Use the available products list below to match and fulfill the user's request as best as possible.\n- For recipes or meal requests, infer the required products and quantities, but do not add unnecessary items. For direct product requests, add only those products and quantities.\n- Always match products using names, synonyms, and categories.\n- If a requested product is not available in the store, include it in the output as unavailable.\n- Output ONLY a valid JSON object with:\n  - dish (string, if applicable, else null or empty)\n  - servings (integer, if applicable, else 1)\n  - ingredients: array of objects with: name, quantity, category, inStock (true/false)\n- Do NOT include any extra text, explanation, or formatting.\n- Example output: {\"dish\":null,\"servings\":1,\"ingredients\":[{\"name\":\"Basmati rice\",\"quantity\":1,\"category\":\"grains\",\"inStock\":true}]}\n\nUser request: \"${message}\"\nAvailable products: ${JSON.stringify(productList)}\n`;
+    const prompt = `You are a grocery assistant that converts cooking requests into a structured JSON shopping list, formatted for real-world grocery stores.\n\nThe goal is to generate accurate and store-ready quantities. Consider how groceries are sold in actual stores. Avoid arbitrary or kitchen-specific units like “cups” or “tablespoons”.\n\n### Output Format:\nReturn a JSON object with:\n- dish (string)\n- servings (integer)\n- ingredients (array of objects with: name, quantity, category, inStock [boolean, true if available in store, false if not])\n\n### Important:\n- You may use synonyms or common names for products (e.g., \"kajus\" for \"cashew nuts\").\n- For vegetables, always list each vegetable individually (never use group names like \"mixed vegetables\").\n- Do not include a 'unit' field in the output.\n- If a product is not available in the store, set inStock to false.\n\n### Quantity Logic Rules:\n1. For grains and dals, use: 0.5kg, 1kg, 1.5kg, etc.\n2. For oils and liquids, use: 250ml, 500ml, 1L\n3. For nuts & dry fruits, use: 50g, 100g, 200g\n4. For vegetables, use number of pieces (e.g., 2 onions) or weight (e.g., 500g carrots)\n5. For spices and masalas, use: 1 packet, 2 packets\n6. Always round up to nearest reasonable grocery unit (no \"37g of rice\")\n7. Only respond with valid JSON. Do not include comments or explanations.\n\n### Example Input:\n\"${message} for ${servings} people\"\n\n### Example Output:\n{\n  \"dish\": \"Veg Dum Biryani\",\n  \"servings\": ${servings},\n  \"ingredients\": [\n    { \"name\": \"Basmati rice\", \"quantity\": 1, \"category\": \"grains\", \"inStock\": true },\n    { \"name\": \"Onion\", \"quantity\": 3, \"category\": \"vegetables\", \"inStock\": true }\n  ]\n}\n\nAVAILABLE PRODUCTS IN STORE:\n${JSON.stringify(productList, null, 2)}\n`;
 
     // Call Gemini API
     const geminiRes = await axios.post(
@@ -80,29 +79,21 @@ export const processChatAndAddToCart = async (req, res) => {
     }
 
     // Post-process: match ingredients to products, set inStock, category, productId
-    function normalize(str) {
-      return (str || '').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/s$/, '');
-    }
     aiResult.ingredients = aiResult.ingredients.map(ing => {
+      // Support both rich and simple AI output
       const ingName = ing.matchedProduct || ing.name || ing.requiredIngredient;
-      // Try exact match, then normalized match, then partial match
-      let prod = products.find(p => p.name.toLowerCase() === (ingName || '').toLowerCase());
-      if (!prod) {
-        prod = products.find(p => normalize(p.name) === normalize(ingName));
-      }
-      if (!prod) {
-        prod = products.find(p => normalize(ingName).includes(normalize(p.name)) || normalize(p.name).includes(normalize(ingName)));
-      }
-      // Ensure quantity is a discrete integer >= 1
-      let quantity = Number(ing.quantity);
-      if (isNaN(quantity) || quantity < 1) quantity = 1;
-      quantity = Math.ceil(quantity);
+      const prod = products.find(p => {
+        const prodName = p.name.toLowerCase();
+        const testName = (ingName || '').toLowerCase();
+        return prodName === testName || prodName.includes(testName) || testName.includes(prodName);
+      });
       return {
         name: prod ? prod.name : (ingName || ''),
-        quantity: quantity,
+        quantity: ing.quantity || 1,
         category: prod ? prod.category : (ing.category || ''),
         inStock: !!(prod && prod.inStock),
         productId: prod ? prod._id : null,
+        // Optionally include extra fields for debugging
         unit: ing.unit,
         matchConfidence: ing.matchConfidence,
         requiredIngredient: ing.requiredIngredient,
@@ -120,33 +111,22 @@ export const processChatAndAddToCart = async (req, res) => {
         if (cartItems[ing.productId]) {
           const prev = Number(cartItems[ing.productId]);
           const add = Number(ing.quantity) || 1;
-          const newQty = prev + add;
-          cartItems[ing.productId] = newQty > 0 ? newQty : 0;
+          cartItems[ing.productId] = prev + add;
         } else {
-          cartItems[ing.productId] = Number(ing.quantity) > 0 ? ing.quantity : 0;
+          cartItems[ing.productId] = ing.quantity;
         }
       } else {
         unavailableItems.push(ing.name);
       }
     });
-    // Remove products with 0 or less quantity from cart
-    Object.keys(cartItems).forEach(pid => {
-      if (Number(cartItems[pid]) <= 0) {
-        delete cartItems[pid];
-      }
-    });
     await User.findByIdAndUpdate(userId, { cartItems });
 
     // Build response message
-    let responseText = `Products required for you have been added to cart. Please review them and proceed to checkout.\n`;
-    if (aiResult.dish && aiResult.dish !== 'null' && aiResult.dish !== null && aiResult.dish !== '') {
-      responseText += `Here is your shopping list for \"${aiResult.dish}\" (serves ${aiResult.servings}):\n`;
-    } else {
-      responseText += `Here is your shopping list as per your request:\n`;
-    }
-    responseText += aiResult.ingredients.filter(ing => ing.inStock).map(ing =>
-      `- ${ing.name} (${ing.quantity}${ing.unit ? ' ' + ing.unit : ''})`
-    ).join('\n');
+    let responseText = `Here is your shopping list for "${aiResult.dish}" (serves ${aiResult.servings}):\n` +
+      aiResult.ingredients.map(ing =>
+        `- ${ing.name} (${ing.quantity}${ing.unit ? ' ' + ing.unit : ''})${ing.inStock ? '' : ' [Not in stock]'}`
+      ).join('\n');
+    responseText += '\n\nProducts required for you have been added to cart. Please review them and proceed to checkout.';
     if (unavailableItems.length > 0) {
       responseText += `\n\nHere are some additional/out of stock/unavailable products that you might want to buy:\n` +
         unavailableItems.map(item => `- ${item}`).join('\n');
@@ -158,107 +138,3 @@ export const processChatAndAddToCart = async (req, res) => {
     res.status(500).json({ success: false, reply: "Internal server error" });
   }
 };
-=======
-import axios from 'axios';
-import Product from '../models/Product.js';
-import Cart from '../models/Cart.js';
-
-// Helper: Call Ollama and extract items robustly, with logging
-async function extractItemsWithOllama(message) {
-  const ollamaPrompt = `Extract products and quantities from this input: '${message}'. Output strict JSON like: [{ "name": "apples", "quantity": "1kg" }]. Return only raw JSON. No explanation.`;
-  let ollamaRes, text, match, parsed;
-  try {
-    ollamaRes = await axios.post('http://localhost:11434/api/generate', {
-      model: 'llama3',
-      prompt: ollamaPrompt,
-      stream: false
-    });
-    text = ollamaRes.data.response || ollamaRes.data;
-    console.log('Ollama raw response:', text);
-    match = text.match(/\[.*\]/s);
-    if (!match) throw new Error('No JSON array found in Ollama output.');
-    try {
-      parsed = JSON.parse(match[0]);
-      console.log('Parsed product list:', parsed);
-    } catch (jsonErr) {
-      console.error('Failed to parse JSON:', jsonErr.message);
-      throw new Error('Could not understand the request.');
-    }
-    return parsed;
-  } catch (err) {
-    console.error('Ollama call or parse failed:', err);
-    throw new Error('Could not process your request.');
-  }
-}
-
-export const postChatMessage = async (req, res) => {
-  try {
-    const { userId, message } = req.body;
-    console.log('User message:', message);
-    if (!userId || !message) return res.status(400).json({ reply: 'Missing userId or message.', cartUpdated: false });
-
-    // 1. Parse with Ollama (robust)
-    let items;
-    try {
-      items = await extractItemsWithOllama(message);
-    } catch (err) {
-      return res.status(200).json({ reply: err.message, cartUpdated: false });
-    }
-    if (!Array.isArray(items) || items.length === 0) {
-      return res.status(404).json({ reply: 'No recognizable grocery items found in your message.', cartUpdated: false });
-    }
-    console.log('Parsed input:', items);
-
-    // 2. Product lookup and cart update
-    let cart = await Cart.findOne({ userId });
-    if (!cart) cart = new Cart({ userId, items: [] });
-    let added = [];
-    let unavailable = [];
-    for (const item of items) {
-      let quantity = 1;
-      if (item.quantity && !isNaN(Number(item.quantity))) {
-        quantity = Number(item.quantity);
-      }
-      // Find product by name (case-insensitive, partial match)
-      const product = await Product.findOne({ name: { $regex: item.name, $options: 'i' } });
-      console.log('MongoDB product found:', product);
-      if (product && product.inStock !== false && (product.stock === undefined || product.stock > 0)) {
-        const idx = cart.items.findIndex(i => i.productId.toString() === product._id.toString());
-        if (idx !== -1) {
-          const prevQty = Number(cart.items[idx].quantity) || 0;
-          cart.items[idx].quantity = String(prevQty + quantity);
-        } else {
-          cart.items.push({ productId: product._id, quantity: String(quantity) });
-        }
-        added.push(`${item.quantity || 1} ${product.name}`);
-        console.log('Added to cart:', product.name);
-      } else {
-        unavailable.push(item.name);
-      }
-    }
-    await cart.save();
-
-    let reply = '';
-    let cartUpdated = false;
-    if (added.length > 0) {
-      reply = `Added ${added.join(' and ')} to your cart.`;
-      cartUpdated = true;
-    }
-    if (unavailable.length > 0) {
-      reply += (reply ? ' ' : '') + unavailable.map(n => `${n} is not available`).join(' ');
-    }
-    if (!reply) reply = 'No matching products found to add to your cart.';
-
-    if (cartUpdated) {
-      return res.status(200).json({ reply, cartUpdated });
-    } else {
-      return res.status(404).json({ reply, cartUpdated });
-    }
-  } catch (error) {
-    console.error('Chat error:', error);
-    res.status(500).json({ reply: 'Could not process your request.', cartUpdated: false });
-  }
-};
-
-// Integration: Import this controller in chat.route.js and wire to POST /api/chat 
->>>>>>> e7ccd0db6fb297e3a6ebdc6e6e096feac567ad0d
