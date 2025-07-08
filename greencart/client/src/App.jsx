@@ -19,6 +19,7 @@ import ProductList from './pages/seller/ProductList';
 import Orders from './pages/seller/Orders';
 import Loading from './components/Loading';
 import Contact from './pages/contact';
+import Chat from './pages/Chat';
 
 const App = () => {
 
@@ -49,6 +50,7 @@ const App = () => {
             <Route path='orders' element={<Orders/>} />
           </Route>
           <Route path='/contact' element={<Contact/>} />
+          <Route path='/chat' element={<Chat/>} />
         </Routes>
       </div>
      {!isSellerPath && <Footer/>}
