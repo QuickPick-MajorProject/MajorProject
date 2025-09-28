@@ -187,3 +187,40 @@ export const getAllOrders = async (req, res)=>{
         res.json({ success: false, message: error.message });
     }
 }
+
+// Get single order details by ID (seller/admin): /api/order/:id
+export const getOrderById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const order = await Order.findById(id).populate("items.product address");
+        if (!order) {
+            return res.json({ success: false, message: "Order not found" });
+        }
+        // Only expose orders that are COD or paid
+        if (!(order.paymentType === "COD" || order.isPaid)) {
+            return res.json({ success: false, message: "Order not available" });
+        }
+        return res.json({ success: true, order });
+    } catch (error) {
+        return res.json({ success: false, message: error.message });
+    }
+}
+
+// Update order status (seller/admin): /api/order/:id/status
+export const updateOrderStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        const allowed = ["Order Placed", "Order Packed", "Out for Delivery", "Delivered"];
+        if (!allowed.includes(status)) {
+            return res.json({ success: false, message: "Invalid status" });
+        }
+        const order = await Order.findByIdAndUpdate(id, { status }, { new: true }).populate("items.product address");
+        if (!order) {
+            return res.json({ success: false, message: "Order not found" });
+        }
+        return res.json({ success: true, order, message: "Status updated" });
+    } catch (error) {
+        return res.json({ success: false, message: error.message });
+    }
+}
