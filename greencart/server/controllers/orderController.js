@@ -10,8 +10,15 @@ export const placeOrderCOD = async (req, res)=>{
         if(!address || items.length === 0){
             return res.json({success: false, message: "Invalid data"})
         }
+        // Validate & clamp quantities
+        const MIN_QTY = 1;
+        const MAX_QTY = 20;
+        const sanitizedItems = items.map((it)=>({
+            product: it.product,
+            quantity: Math.min(MAX_QTY, Math.max(MIN_QTY, Math.floor(Number(it.quantity) || MIN_QTY)))
+        }))
         // Calculate Amount Using Items
-        let amount = await items.reduce(async (acc, item)=>{
+        let amount = await sanitizedItems.reduce(async (acc, item)=>{
             const product = await Product.findById(item.product);
             return (await acc) + product.offerPrice * item.quantity;
         }, 0)
@@ -21,7 +28,7 @@ export const placeOrderCOD = async (req, res)=>{
 
         await Order.create({
             userId,
-            items,
+            items: sanitizedItems,
             amount,
             address,
             paymentType: "COD",
@@ -43,10 +50,17 @@ export const placeOrderStripe = async (req, res)=>{
             return res.json({success: false, message: "Invalid data"})
         }
 
+        const MIN_QTY = 1;
+        const MAX_QTY = 20;
+        const sanitizedItems = items.map((it)=>({
+            product: it.product,
+            quantity: Math.min(MAX_QTY, Math.max(MIN_QTY, Math.floor(Number(it.quantity) || MIN_QTY)))
+        }))
+
         let productData = [];
 
         // Calculate Amount Using Items
-        let amount = await items.reduce(async (acc, item)=>{
+        let amount = await sanitizedItems.reduce(async (acc, item)=>{
             const product = await Product.findById(item.product);
             productData.push({
                 name: product.name,
@@ -61,7 +75,7 @@ export const placeOrderStripe = async (req, res)=>{
 
        const order =  await Order.create({
             userId,
-            items,
+            items: sanitizedItems,
             amount,
             address,
             paymentType: "Online",

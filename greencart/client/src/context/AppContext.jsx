@@ -69,10 +69,13 @@ const fetchUser = async ()=>{
 const addToCart = (itemId)=>{
     let cartData = structuredClone(cartItems);
 
+    const MIN_QTY = 1;
+    const MAX_QTY = 20;
+
     if(cartData[itemId]){
-        cartData[itemId] += 1;
+        cartData[itemId] = Math.min(MAX_QTY, Math.max(MIN_QTY, cartData[itemId] + 1));
     }else{
-        cartData[itemId] = 1;
+        cartData[itemId] = MIN_QTY;
     }
     setCartItems(cartData);
     toast.success("Added to Cart")
@@ -80,17 +83,23 @@ const addToCart = (itemId)=>{
 
   // Update Cart Item Quantity
   const updateCartItem = (itemId, quantity)=>{
+    const MIN_QTY = 1;
+    const MAX_QTY = 20;
+    const safeQuantity = Number.isFinite(quantity) ? Math.floor(quantity) : MIN_QTY;
+    const clamped = Math.min(MAX_QTY, Math.max(MIN_QTY, safeQuantity));
+
     let cartData = structuredClone(cartItems);
-    cartData[itemId] = quantity;
+    cartData[itemId] = clamped;
     setCartItems(cartData)
     toast.success("Cart Updated")
   }
 
 // Remove Product from Cart
 const removeFromCart = (itemId)=>{
+    const MIN_QTY = 1;
     let cartData = structuredClone(cartItems);
     if(cartData[itemId]){
-        cartData[itemId] -= 1;
+        cartData[itemId] = Math.max(0, cartData[itemId] - 1);
         if(cartData[itemId] === 0){
             delete cartData[itemId];
         }
@@ -103,7 +112,7 @@ const removeFromCart = (itemId)=>{
   const getCartCount = ()=>{
     let totalCount = 0;
     for(const item in cartItems){
-        totalCount += cartItems[item];
+        totalCount += Number(cartItems[item]) || 0;
     }
     return totalCount;
   }
@@ -113,8 +122,10 @@ const getCartAmount = () =>{
     let totalAmount = 0;
     for (const items in cartItems){
         let itemInfo = products.find((product)=> product._id === items);
-        if(cartItems[items] > 0){
-            totalAmount += itemInfo.offerPrice * cartItems[items]
+        if(itemInfo && cartItems[items] > 0){
+            const quantity = Number(cartItems[items]) || 0;
+            const price = Number(itemInfo.offerPrice) || 0;
+            totalAmount += price * quantity;
         }
     }
     return Math.floor(totalAmount * 100) / 100;

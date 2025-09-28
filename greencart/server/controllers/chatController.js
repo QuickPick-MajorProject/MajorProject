@@ -2,7 +2,8 @@ import axios from "axios";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
 
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "AIzaSyASiWN1hMgJIheIilG-uZrkbUTuB2af4V8";
+// const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "AIzaSyASiWN1hMgJIheIilG-uZrkbUTuB2af4V8";
+const GOOGLE_API_KEY = "AIzaSyCTILucJ5CK5up7GL_2C4VXOsnyR43NfqA";
 
 // Helper to extract servings from user message
 function extractServings(message) {
@@ -41,7 +42,7 @@ export const processChatAndAddToCart = async (req, res) => {
     const servings = extractServings(message);
 
     // Build strict prompt for Gemini
-    const prompt = `You are a grocery assistant that converts cooking requests into a structured JSON shopping list, formatted for real-world grocery stores.\n\nThe goal is to generate accurate and store-ready quantities. Consider how groceries are sold in actual stores. Avoid arbitrary or kitchen-specific units like “cups” or “tablespoons”.\n\n### Output Format:\nReturn a JSON object with:\n- dish (string)\n- servings (integer)\n- ingredients (array of objects with: name, quantity, category, inStock [boolean, true if available in store, false if not])\n\n### Important:\n- You may use synonyms or common names for products (e.g., \"kajus\" for \"cashew nuts\").\n- For vegetables, always list each vegetable individually (never use group names like \"mixed vegetables\").\n- Do not include a 'unit' field in the output.\n- If a product is not available in the store, set inStock to false.\n\n### Quantity Logic Rules:\n1. For grains and dals, use: 0.5kg, 1kg, 1.5kg, etc.\n2. For oils and liquids, use: 250ml, 500ml, 1L\n3. For nuts & dry fruits, use: 50g, 100g, 200g\n4. For vegetables, use number of pieces (e.g., 2 onions) or weight (e.g., 500g carrots)\n5. For spices and masalas, use: 1 packet, 2 packets\n6. Always round up to nearest reasonable grocery unit (no \"37g of rice\")\n7. Only respond with valid JSON. Do not include comments or explanations.\n\n### Example Input:\n\"${message} for ${servings} people\"\n\n### Example Output:\n{\n  \"dish\": \"Veg Dum Biryani\",\n  \"servings\": ${servings},\n  \"ingredients\": [\n    { \"name\": \"Basmati rice\", \"quantity\": 1, \"category\": \"grains\", \"inStock\": true },\n    { \"name\": \"Onion\", \"quantity\": 3, \"category\": \"vegetables\", \"inStock\": true }\n  ]\n}\n\nAVAILABLE PRODUCTS IN STORE:\n${JSON.stringify(productList, null, 2)}\n`;
+    const prompt = `You are a grocery assistant that converts cooking requests into a structured JSON shopping list for real-world grocery stores.\n\nYour job is to list ONLY the ingredients truly required for the exact dish the user requests. Respect dietary constraints implied by the dish name or explicitly stated by the user.\n\n### Output Format (JSON ONLY):\nReturn an object with:\n- dish (string)\n- servings (integer)\n- ingredients: array of objects with fields: { name, quantity, category, inStock }\n\n### Global Rules (CRITICAL):\n- If the user says "veg", "vegetarian", "vegan", "eggless", or the dish is a vegetarian variant (e.g., "veg biryani"), DO NOT include meat, fish/seafood, eggs, or animal-based additions.\n- If the user specifies exclusions (e.g., "no onion", "without garlic"), do not include those ingredients.\n- Use ONLY ingredients required for the requested dish. Do not add unrelated items.\n- Choose ingredient names that match items from the store when possible. If not found, set inStock=false.\n- Do not include a 'unit' field. Set inStock=true only if an equivalent product appears in the store list.\n\n### Quantity Rules (INTEGERS ONLY):\n- quantity MUST be a positive integer (1, 2, 3, 4, 5, ...). NO decimals, NO fractions.\n- quantity represents the COUNT of store units/packs/items to add to cart.\n- For vegetables/fruits: quantity = number of pieces (e.g., onions = 2)\n- For staples/oils/spices: quantity = number of retail packs (e.g., rice pack = 1, oil bottle = 1)\n- If uncertain, choose the minimal reasonable count (often 1).\n\n### Important:\n- Use synonyms and common names (e.g., "kajus" -> "cashew nuts").\n- Map to store items when names are similar. If no match, set inStock=false.\n- Do NOT infer non-vegetarian ingredients when request implies vegetarian.\n\n### JSON Only:\nRespond with valid JSON only. No headings, comments, or explanations.\n\n### Example Input:\n"${message} for ${servings} people"\n\nAVAILABLE PRODUCTS IN STORE:\n${JSON.stringify(productList, null, 2)}\n`;
 
     // Call Gemini API
     const geminiRes = await axios.post(
@@ -107,13 +108,15 @@ export const processChatAndAddToCart = async (req, res) => {
     const unavailableItems = [];
     aiResult.ingredients.forEach(ing => {
       if (ing.inStock && ing.productId) {
-        // If already in cart, increment quantity (if numeric), else set
+        // Ensure quantity is a valid positive integer
+        const qty = Math.max(1, Math.floor(Number(ing.quantity) || 1));
+        
+        // If already in cart, increment quantity, else set
         if (cartItems[ing.productId]) {
-          const prev = Number(cartItems[ing.productId]);
-          const add = Number(ing.quantity) || 1;
-          cartItems[ing.productId] = prev + add;
+          const prev = Math.max(1, Math.floor(Number(cartItems[ing.productId]) || 1));
+          cartItems[ing.productId] = Math.min(20, prev + qty); // Cap at 20
         } else {
-          cartItems[ing.productId] = ing.quantity;
+          cartItems[ing.productId] = Math.min(20, qty); // Cap at 20
         }
       } else {
         unavailableItems.push(ing.name);
