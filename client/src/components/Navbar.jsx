@@ -59,8 +59,13 @@ const Navbar = () => {
         :
         (
           <div className='relative group'>
-            <img src={assets.profile_icon} className='w-10' alt="" />
+            {user.profilePicture ? (
+              <img src={user.profilePicture} className='w-10 h-10 rounded-full object-cover' alt="profile" />
+            ) : (
+              <img src={assets.profile_icon} className='w-10' alt="profile" />
+            )}
             <ul className='hidden group-hover:block absolute top-10 right-0 bg-white shadow border border-gray-200 py-2.5 w-30 rounded-md text-sm z-40'>
+              <li onClick={()=> navigate("profile")} className='p-1.5 pl-3 hover:bg-primary/10 cursor-pointer'>My Profile</li>
               <li onClick={()=> navigate("my-orders")} className='p-1.5 pl-3 hover:bg-primary/10 cursor-pointer'>My Orders</li>
               <li onClick={logout} className='p-1.5 pl-3 hover:bg-primary/10 cursor-pointer'>Logout</li>
             </ul>
@@ -101,6 +106,7 @@ const Navbar = () => {
           Logout
         </button>
         )}
+        
         
       </div>
       )}

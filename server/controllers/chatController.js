@@ -2,8 +2,15 @@ import axios from "axios";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
 
-// const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || "AIzaSyASiWN1hMgJIheIilG-uZrkbUTuB2af4V8";
-const GOOGLE_API_KEY = "AIzaSyCTILucJ5CK5up7GL_2C4VXOsnyR43NfqA";
+// Use API key from .env (loaded via dotenv/config in server.js)
+const GOOGLE_API_KEY = process.env.GEMINI_API_KEY;
+
+// List of models to try, in order of preference
+const GEMINI_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-lite",
+];
 
 // Helper to extract servings from user message
 function extractServings(message) {
@@ -14,13 +21,57 @@ function extractServings(message) {
   return 1;
 }
 
+// Helper to call Gemini API with retry and model fallback
+async function callGeminiWithFallback(prompt, apiKey) {
+  for (const model of GEMINI_MODELS) {
+    try {
+      console.log(`Trying Gemini model: ${model}`);
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: prompt }]
+            }
+          ],
+          generationConfig: {
+            responseMimeType: "application/json"
+          }
+        },
+        { timeout: 30000 }
+      );
+      console.log(`Success with model: ${model}`);
+      return response;
+    } catch (error) {
+      const status = error.response?.status;
+      const errorMsg = error.response?.data?.error?.message || error.message;
+      console.warn(`Model ${model} failed (status: ${status}): ${errorMsg}`);
+
+      // If it's a rate limit (429) or model not found (404), try the next model
+      if (status === 429 || status === 404) {
+        continue;
+      }
+      // For other errors, throw immediately
+      throw error;
+    }
+  }
+  // All models exhausted
+  throw new Error("RATE_LIMITED_ALL_MODELS");
+}
+
 // POST /api/chat/process
 // req.body: { message: string }
-// Requires authUser middleware to set req.body.userId if logged in
+// Requires authUser middleware to set req.userId if logged in
 export const processChatAndAddToCart = async (req, res) => {
   try {
     const { message } = req.body;
-    const userId = req.body.userId;
+    const userId = req.userId;
+
+    if (!GOOGLE_API_KEY || GOOGLE_API_KEY === 'YOUR_NEW_API_KEY_HERE') {
+      return res.json({ success: false, reply: "Gemini API key is not configured. Please add your API key to the .env file." });
+    }
+
     if (!userId) {
       return res.json({ success: false, reply: "login to use this" });
     }
@@ -28,37 +79,39 @@ export const processChatAndAddToCart = async (req, res) => {
       return res.json({ success: false, reply: "Please enter a valid request." });
     }
 
-    // Get all products for context
+    // Get all products for context — send only name, category, and _id to minimize tokens
     const products = await Product.find({});
     const productList = products.map(p => ({
       name: p.name,
-      description: p.description,
       category: p.category || 'general',
-      inStock: p.inStock,
       _id: p._id
     }));
 
     // Extract servings from message or default to 1
     const servings = extractServings(message);
 
-    // Build strict prompt for Gemini
-    const prompt = `You are a grocery assistant that converts cooking requests into a structured JSON shopping list for real-world grocery stores.\n\nYour job is to list ONLY the ingredients truly required for the exact dish the user requests. Respect dietary constraints implied by the dish name or explicitly stated by the user.\n\n### Output Format (JSON ONLY):\nReturn an object with:\n- dish (string)\n- servings (integer)\n- ingredients: array of objects with fields: { name, quantity, category, inStock }\n\n### Global Rules (CRITICAL):\n- If the user says "veg", "vegetarian", "vegan", "eggless", or the dish is a vegetarian variant (e.g., "veg biryani"), DO NOT include meat, fish/seafood, eggs, or animal-based additions.\n- If the user specifies exclusions (e.g., "no onion", "without garlic"), do not include those ingredients.\n- Use ONLY ingredients required for the requested dish. Do not add unrelated items.\n- Choose ingredient names that match items from the store when possible. If not found, set inStock=false.\n- Do not include a 'unit' field. Set inStock=true only if an equivalent product appears in the store list.\n\n### Quantity Rules (INTEGERS ONLY):\n- quantity MUST be a positive integer (1, 2, 3, 4, 5, ...). NO decimals, NO fractions.\n- quantity represents the COUNT of store units/packs/items to add to cart.\n- For vegetables/fruits: quantity = number of pieces (e.g., onions = 2)\n- For staples/oils/spices: quantity = number of retail packs (e.g., rice pack = 1, oil bottle = 1)\n- If uncertain, choose the minimal reasonable count (often 1).\n\n### Important:\n- Use synonyms and common names (e.g., "kajus" -> "cashew nuts").\n- Map to store items when names are similar. If no match, set inStock=false.\n- Do NOT infer non-vegetarian ingredients when request implies vegetarian.\n\n### JSON Only:\nRespond with valid JSON only. No headings, comments, or explanations.\n\n### Example Input:\n"${message} for ${servings} people"\n\nAVAILABLE PRODUCTS IN STORE:\n${JSON.stringify(productList, null, 2)}\n`;
+    // Build a more compact prompt to save tokens
+    const prompt = `You are a grocery assistant. Convert the cooking request into a JSON shopping list.
 
-    // Call Gemini API
-    const geminiRes = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_API_KEY}`,
-      {
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: prompt }]
-          }
-        ],
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      }
-    );
+Rules:
+- List ONLY ingredients needed for the requested dish
+- Respect dietary constraints (veg/vegan/eggless = no meat/fish/eggs)
+- Respect exclusions (e.g., "no onion")
+- Match ingredient names to store products when possible; if no match, set inStock=false
+- quantity must be a positive integer (count of store items/packs)
+
+Output JSON format (no extra text):
+{"dish":"...","servings":${servings},"ingredients":[{"name":"...","quantity":1,"category":"...","inStock":true}]}
+
+User request: "${message} for ${servings} people"
+
+Store products:
+${JSON.stringify(productList)}
+`;
+
+    // Call Gemini API with model fallback
+    const geminiRes = await callGeminiWithFallback(prompt, GOOGLE_API_KEY);
+
     const jsonText = geminiRes.data.candidates[0].content.parts[0].text;
     let aiResult;
     // Robustly extract JSON from Gemini output
@@ -110,7 +163,7 @@ export const processChatAndAddToCart = async (req, res) => {
       if (ing.inStock && ing.productId) {
         // Ensure quantity is a valid positive integer
         const qty = Math.max(1, Math.floor(Number(ing.quantity) || 1));
-        
+
         // If already in cart, increment quantity, else set
         if (cartItems[ing.productId]) {
           const prev = Math.max(1, Math.floor(Number(cartItems[ing.productId]) || 1));
@@ -137,7 +190,14 @@ export const processChatAndAddToCart = async (req, res) => {
 
     res.json({ success: true, reply: responseText, aiResult, cartItems });
   } catch (error) {
-    console.log(error.message);
-    res.status(500).json({ success: false, reply: "Internal server error" });
+    if (error.message === "RATE_LIMITED_ALL_MODELS") {
+      console.error("Chat API Error: All Gemini models are rate-limited.");
+      return res.status(429).json({
+        success: false,
+        reply: "The AI service is temporarily unavailable due to rate limits. Please wait a minute and try again."
+      });
+    }
+    console.error("Chat API Error:", error.response?.data || error.message);
+    res.status(500).json({ success: false, reply: "There was an error processing your request. Please try again." });
   }
 };

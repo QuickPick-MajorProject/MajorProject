@@ -1,6 +1,6 @@
 import React from 'react'
 import { useAppContext } from '../context/AppContext'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { categories } from '../assets/assets'
 import ProductCard from '../components/ProductCard'
 
@@ -8,6 +8,7 @@ const ProductCategory = () => {
 
     const { products } =  useAppContext()
     const { category } = useParams()
+    const navigate = useNavigate()
 
     const searchCategory = categories.find((item)=> item.path.toLowerCase() === category)
 
@@ -16,9 +17,14 @@ const ProductCategory = () => {
   return (
     <div className='mt-16'>
       {searchCategory && (
-        <div className='flex flex-col items-end w-max'>
-            <p className='text-2xl font-medium'>{searchCategory.text.toUpperCase()}</p>
-            <div className="w-16 h-0.5 bg-primary rounded-full"></div>
+        <div className='flex flex-col gap-2'>
+            <button onClick={() => navigate(-1)} className='text-base text-gray-600 hover:text-primary transition cursor-pointer font-medium w-max' title='Go back'>
+                &lt; Back
+            </button>
+            <div className='flex flex-col items-end w-max'>
+                <p className='text-2xl font-medium'>{searchCategory.text.toUpperCase()}</p>
+                <div className="w-16 h-0.5 bg-primary rounded-full"></div>
+            </div>
         </div>
       )}
       {filteredProducts.length > 0 ? (

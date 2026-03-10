@@ -133,13 +133,13 @@ export const assets = {
 
 export const categories = [
   {
-    text: "Organic veggies",
+    text: "Vegetables",
     path: "Vegetables",
     image: organic_vegitable_image,
     bgColor: "#FEF6DA",
   },
   {
-    text: "Fresh Fruits",
+    text: "Fruits",
     path: "Fruits",
     image: fresh_fruits_image,
     bgColor: "##c5c1f7",
@@ -163,7 +163,7 @@ export const categories = [
     bgColor: "#E1F5EC",
   },
   {
-    text: "Dairy Products",
+    text: "Dairy",
     path: "Dairy",
     image: dairy_product_image,
     bgColor: "#FEE6CD",
@@ -199,7 +199,7 @@ export const categories = [
     bgColor: "#F7F7F7",
   },
   {
-    text: "Household Cleaning",
+    text: "Cleaning",
     path: "Household",
     image: household_image,
     bgColor: "#F7F7F7",

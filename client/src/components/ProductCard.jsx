@@ -8,10 +8,10 @@ const ProductCard = ({product}) => {
     return product && (
         <div
             onClick={()=> {navigate(`/products/${product.category.toLowerCase()}/${product._id}`); scrollTo(0,0)}}
-            className="border border-gray-500/20 rounded-md bg-white min-w-48 max-w-48 w-full flex flex-col items-center justify-between py-3 px-3 h-[255px]"
+            className="border border-gray-500/20 rounded-md bg-white min-w-48 max-w-48 w-full flex flex-col items-center justify-between py-3 px-3 h-[300px]"
             style={{ boxSizing: 'border-box' }}
         >
-            <div className="flex items-center justify-center w-full h-24 mb-2">
+            <div className="flex items-center justify-center w-full h-36 mb-2">
                 <img className="object-contain h-full w-full group-hover:scale-105 transition" src={product.image[0]} alt={product.name} />
             </div>
             <div className="flex flex-col w-full flex-1 justify-between mt-0 items-center">
