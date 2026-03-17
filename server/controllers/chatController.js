@@ -2,15 +2,11 @@ import axios from "axios";
 import Product from "../models/Product.js";
 import User from "../models/User.js";
 
-// Use API key from .env (loaded via dotenv/config in server.js)
-const GOOGLE_API_KEY = process.env.GEMINI_API_KEY;
+// Use Groq API key from .env
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
-// List of models to try, in order of preference
-const GEMINI_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-2.0-flash-lite",
-];
+// Groq model to use (free tier, fast, capable)
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 
 // Helper to extract servings from user message
 function extractServings(message) {
@@ -21,43 +17,37 @@ function extractServings(message) {
   return 1;
 }
 
-// Helper to call Gemini API with retry and model fallback
-async function callGeminiWithFallback(prompt, apiKey) {
-  for (const model of GEMINI_MODELS) {
-    try {
-      console.log(`Trying Gemini model: ${model}`);
-      const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+// Helper to call Groq API
+async function callGroq(prompt, apiKey) {
+  console.log(`Calling Groq model: ${GROQ_MODEL}`);
+  const response = await axios.post(
+    'https://api.groq.com/openai/v1/chat/completions',
+    {
+      model: GROQ_MODEL,
+      messages: [
         {
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: prompt }]
-            }
-          ],
-          generationConfig: {
-            responseMimeType: "application/json"
-          }
+          role: 'system',
+          content: 'You are a grocery assistant. You MUST respond with valid JSON only, no extra text or markdown.'
         },
-        { timeout: 30000 }
-      );
-      console.log(`Success with model: ${model}`);
-      return response;
-    } catch (error) {
-      const status = error.response?.status;
-      const errorMsg = error.response?.data?.error?.message || error.message;
-      console.warn(`Model ${model} failed (status: ${status}): ${errorMsg}`);
-
-      // If it's a rate limit (429) or model not found (404), try the next model
-      if (status === 429 || status === 404) {
-        continue;
-      }
-      // For other errors, throw immediately
-      throw error;
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.3,
+      max_tokens: 1024,
+      response_format: { type: "json_object" }
+    },
+    {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000
     }
-  }
-  // All models exhausted
-  throw new Error("RATE_LIMITED_ALL_MODELS");
+  );
+  console.log(`Success with Groq model: ${GROQ_MODEL}`);
+  return response;
 }
 
 // POST /api/chat/process
@@ -68,8 +58,8 @@ export const processChatAndAddToCart = async (req, res) => {
     const { message } = req.body;
     const userId = req.userId;
 
-    if (!GOOGLE_API_KEY || GOOGLE_API_KEY === 'YOUR_NEW_API_KEY_HERE') {
-      return res.json({ success: false, reply: "Gemini API key is not configured. Please add your API key to the .env file." });
+    if (!GROQ_API_KEY || GROQ_API_KEY === 'YOUR_API_KEY_HERE') {
+      return res.json({ success: false, reply: "Groq API key is not configured. Please add your API key to the .env file." });
     }
 
     if (!userId) {
@@ -91,7 +81,7 @@ export const processChatAndAddToCart = async (req, res) => {
     const servings = extractServings(message);
 
     // Build a more compact prompt to save tokens
-    const prompt = `You are a grocery assistant. Convert the cooking request into a JSON shopping list.
+    const prompt = `Convert the cooking request into a JSON shopping list.
 
 Rules:
 - List ONLY ingredients needed for the requested dish
@@ -109,12 +99,12 @@ Store products:
 ${JSON.stringify(productList)}
 `;
 
-    // Call Gemini API with model fallback
-    const geminiRes = await callGeminiWithFallback(prompt, GOOGLE_API_KEY);
+    // Call Groq API
+    const groqRes = await callGroq(prompt, GROQ_API_KEY);
 
-    const jsonText = geminiRes.data.candidates[0].content.parts[0].text;
+    const jsonText = groqRes.data.choices[0].message.content;
     let aiResult;
-    // Robustly extract JSON from Gemini output
+    // Robustly extract JSON from AI output
     function extractJson(text) {
       // Remove markdown/code block if present
       const match = text.match(/\{[\s\S]*\}/);
@@ -190,8 +180,8 @@ ${JSON.stringify(productList)}
 
     res.json({ success: true, reply: responseText, aiResult, cartItems });
   } catch (error) {
-    if (error.message === "RATE_LIMITED_ALL_MODELS") {
-      console.error("Chat API Error: All Gemini models are rate-limited.");
+    if (error.response?.status === 429) {
+      console.error("Chat API Error: Groq rate limited.");
       return res.status(429).json({
         success: false,
         reply: "The AI service is temporarily unavailable due to rate limits. Please wait a minute and try again."
